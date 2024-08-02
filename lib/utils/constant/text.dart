@@ -1,0 +1,1 @@
+const appName = 'Dice Roller';

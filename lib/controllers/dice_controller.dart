@@ -1,73 +1,57 @@
-import 'dart:async';
 import 'dart:math';
+
+import 'package:dice_app/customSnackbar/show_custom_snackbar.dart';
 import 'package:dice_app/models/dice_model.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:get/state_manager.dart';
+import 'package:get/get.dart';
 
 class DiceController extends GetxController {
-  var dice = DiceModel(number: 1, rollCount: 0).obs;
-  int totalSum = 0; 
+  var dice = DiceModel().obs;
 
   void rollDice() {
-    int newNumber = Random().nextInt(6) + 1;
-    dice.update((val) {
-      val?.number = newNumber;
-      val?.rollCount++;
+  if (dice.value.rollCount < dice.value.maxRolls) {
+    int rolledNumber = Random().nextInt(6) + 1;
+
+   
+    dice.update((model) {
+      if (model != null) {
+        model.number = rolledNumber;
+        model.rollCount += 1;
+        model.totalSum += rolledNumber;
+        model.rollResults.add(rolledNumber);
+      }
     });
 
     
-    totalSum += newNumber;
-
-    Future.microtask(() {
-      _showToast(newNumber);
-    });
-
-    _checkRollCount();
-  }
-
-  void _showToast(int number) {
-    String message;
-    if (number == 6) {
-      message = 'A 6 has been thrown';
-    } else if (number % 2 == 0) {
-      message = 'An even number is thrown';
+    if (rolledNumber == 6) {
+      showCustomSnackbar('Dice Roll', 'A 6 has been thrown');
+    } else if (rolledNumber % 2 == 0) {
+      showCustomSnackbar('Dice Roll', 'An even number has been thrown');
     } else {
-      message = 'An odd number is thrown';
+      showCustomSnackbar('Dice Roll', 'An odd number has been thrown');
     }
-
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 3,
-      backgroundColor: Colors.blue,
-      textColor: Colors.white,
-      fontSize: 20.0,
-    );
   }
 
-  void _checkRollCount() {
-    if (dice.value.rollCount == 6) {
-        dice.update((val) {
-        val?.rollCount = 0;
-      });
+  if (dice.value.rollCount == dice.value.maxRolls) {
+    Get.snackbar(
+      'Dice Rolled',
+      'Roll Results: ${dice.value.rollResults.join(', ')}',
+      backgroundColor: Colors.blue,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    resetGame();
+  }
+}
 
-      
-      Future.delayed(const Duration(seconds: 3), () {
-        Fluttertoast.showToast(
-          msg: 'Total sum of numbers: $totalSum',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.SNACKBAR,
-          timeInSecForIosWeb: 3,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
-      
-        totalSum = 0;
-      });
-    }
+  void resetGame() {
+    dice.update((model) {
+      if (model != null) {
+        model.number = 1;
+        model.rollCount = 0;
+        model.totalSum = 0;
+        model.rollResults = []; 
+      }
+    });
   }
 }
